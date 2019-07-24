@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+Name=KIO FUSE
+X-KDE-PluginInfo-Category=MountService/all
+X-KDE-ServiceTypes=KDEDModule
+X-KDE-Library=kiofuse
+X-KDE-FactoryName=kiofuse
+X-KDE-Kded-load-on-demand=true
+X-KDE-Kded-autoload=true
