@@ -25,6 +25,8 @@
 #include <QDBusAbstractAdaptor>
 #include <QFile>
 
+class KBookmarkManager;
+
 class KIOFuse : public KDEDModule
 {
     Q_OBJECT
@@ -40,11 +42,14 @@ class KIOFuse : public KDEDModule
 
     private:
         QString convertToLocalPath(const QString &path);
+        void createBookmark(const QString &label, const QUrl &url);
 
     private:
+        int m_idCount;
         QString m_mountDir;
         QFile m_controlFile;
         QMap<QString, QString> m_handledUrls;
+        KBookmarkManager *m_manager;
 };
 
 #endif

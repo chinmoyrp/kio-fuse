@@ -20,14 +20,17 @@
 
 #include "kded.h"
 
-#include <KPluginFactory>
-#include <KPluginLoader>
 #include <QDebug>
 #include <QDir>
 #include <QUrl>
 #include <QProcess>
 #include <QDBusConnection>
 #include <QStandardPaths>
+#include <QDateTime>
+
+#include <KPluginFactory>
+#include <KPluginLoader>
+#include <KBookmarkManager>
 
 
 K_PLUGIN_FACTORY_WITH_JSON(KIOFuseFactory,
@@ -35,7 +38,7 @@ K_PLUGIN_FACTORY_WITH_JSON(KIOFuseFactory,
                            registerPlugin<KIOFuse>();)
 
 KIOFuse::KIOFuse(QObject *parent, const QList<QVariant> &parameters)
-    : KDEDModule(parent)
+    : KDEDModule(parent), m_idCount(0)
 {
     Q_UNUSED(parameters);
 
@@ -43,9 +46,11 @@ KIOFuse::KIOFuse(QObject *parent, const QList<QVariant> &parameters)
     QDir().mkpath(m_mountDir);
     QProcess proc;
     proc.start(QStringLiteral("kio-fuse"), {m_mountDir});
-    proc.waitForFinished();
+    qDebug() << "kio.fuse.process:" << proc.waitForFinished(10000);
     m_controlFile.setFileName(m_mountDir + QStringLiteral("/_control"));
     m_controlFile.open(QIODevice::WriteOnly | QIODevice::Unbuffered | QIODevice::Truncate);
+    const QString file = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/user-places.xbel");
+    m_manager = KBookmarkManager::managerForExternalFile(file);
 }
 
 KIOFuse::~KIOFuse()
@@ -79,14 +84,26 @@ void KIOFuse::mountUrl(const QString &remoteUrl)
     QByteArray cmd = QStringLiteral("MOUNT %1").arg(remoteUrl).toUtf8();
     m_controlFile.write(cmd);
     const QString localPath = convertToLocalPath(remoteUrl);
-    if (QFile::exists(localPath)) {
-        m_handledUrls.insert(remoteUrl, localPath);
-    }
+    m_handledUrls.insert(remoteUrl, localPath);
+    createBookmark(QUrl::fromUserInput(remoteUrl).authority(), QUrl::fromLocalFile(localPath));
 }
+
 
 QString KIOFuse::localUrl(const QString &remoteUrl)
 {
     return QUrl::fromLocalFile(convertToLocalPath(remoteUrl)).toString();
 }
+
+void KIOFuse::createBookmark(const QString &label, const QUrl &url)
+{
+    KBookmarkGroup root = m_manager->root();
+    if (root.isNull()) {
+        return;
+    }
+    KBookmark bookmark = root.addBookmark(label, url, QStringLiteral("folder-network"));
+    bookmark.setMetaDataItem(QStringLiteral("ID"),QString::number(QDateTime::currentSecsSinceEpoch()) + QLatin1Char('/') + QString::number(m_idCount++));
+    m_manager->save();
+}
+
 
 #include "kded.moc"

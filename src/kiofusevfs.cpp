@@ -43,31 +43,30 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
-const struct fuse_lowlevel_ops KIOFuseVFS::fuse_ll_ops = {
-	.init = &KIOFuseVFS::init,
-	.lookup = &KIOFuseVFS::lookup,
-	.forget = &KIOFuseVFS::forget,
-	.getattr = &KIOFuseVFS::getattr,
-	.setattr = &KIOFuseVFS::setattr,
-	.readlink = &KIOFuseVFS::readlink,
-	.mknod = &KIOFuseVFS::mknod,
-	.mkdir = &KIOFuseVFS::mkdir,
-	.unlink = &KIOFuseVFS::unlink,
-	.rmdir = &KIOFuseVFS::rmdir,
-	.symlink = &KIOFuseVFS::symlink,
-	.rename = &KIOFuseVFS::rename,
-	.open = &KIOFuseVFS::open,
-	.read = &KIOFuseVFS::read,
-	.write = &KIOFuseVFS::write,
-	.flush = &KIOFuseVFS::flush,
-	.release = &KIOFuseVFS::release,
-	.fsync = &KIOFuseVFS::fsync,
-        .opendir = &KIOFuseVFS::opendir,
-	.readdir = &KIOFuseVFS::readdir,
-        .releasedir = &KIOFuseVFS::releasedir,
-        .fsyncdir = &KIOFuseVFS::fsyncdir,
-        .statfs = &KIOFuseVFS::statfs,
-};
+const struct fuse_lowlevel_ops KIOFuseVFS::fuse_ll_ops = []{
+        struct fuse_lowlevel_ops ops;
+        ops.init = &KIOFuseVFS::init;
+        ops.lookup = &KIOFuseVFS::lookup;
+        ops.forget = &KIOFuseVFS::forget;
+        ops.getattr = &KIOFuseVFS::getattr;
+        ops.setattr = &KIOFuseVFS::setattr;
+        ops.readlink = &KIOFuseVFS::readlink;
+        ops.mknod = &KIOFuseVFS::mknod;
+        ops.mkdir = &KIOFuseVFS::mkdir;
+        ops.unlink = &KIOFuseVFS::unlink;
+        ops.rmdir = &KIOFuseVFS::rmdir;
+        ops.symlink = &KIOFuseVFS::symlink;
+        ops.rename = &KIOFuseVFS::rename;
+        ops.open = &KIOFuseVFS::open;
+        ops.read = &KIOFuseVFS::read;
+        ops.write = &KIOFuseVFS::write;
+        ops.flush = &KIOFuseVFS::flush;
+        ops.release = &KIOFuseVFS::release;
+        ops.fsync = &KIOFuseVFS::fsync;
+        ops.readdir = &KIOFuseVFS::readdir;
+        ops.statfs = &KIOFuseVFS::statfs;
+        return ops;
+}();
 #pragma GCC diagnostic pop
 
 /* Handles partial writes and EINTR.
@@ -1957,24 +1956,4 @@ int KIOFuseVFS::kioErrorToFuseError(const int kioError) {
 		case KIO::ERR_OWNER_DIED                   : return EIO;
 		default                                    : return EIO;
 	}
-}
-
-void KIOFuseVFS::opendir(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
-{
-    Q_UNUSED(req);
-    Q_UNUSED(ino);
-    Q_UNUSED(fi);
-}
-void KIOFuseVFS::releasedir(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
-{
-    Q_UNUSED(req);
-    Q_UNUSED(ino);
-    Q_UNUSED(fi);
-}
-void KIOFuseVFS::fsyncdir(fuse_req_t req, fuse_ino_t ino, int datasync, struct fuse_file_info *fi)
-{
-    Q_UNUSED(req);
-    Q_UNUSED(ino);
-    Q_UNUSED(datasync);
-    Q_UNUSED(fi);
 }

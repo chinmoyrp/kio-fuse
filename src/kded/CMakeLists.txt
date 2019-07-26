@@ -9,6 +9,8 @@ target_link_libraries(kiofuse
     KF5::CoreAddons
     KF5::DBusAddons
     KF5::KIOCore
+    KF5::KIOFileWidgets
+    KF5::Bookmarks
 )
 
 install(TARGETS kiofuse DESTINATION ${PLUGIN_INSTALL_DIR}/kf5/kded)
