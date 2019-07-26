@@ -62,7 +62,10 @@ const struct fuse_lowlevel_ops KIOFuseVFS::fuse_ll_ops = {
 	.flush = &KIOFuseVFS::flush,
 	.release = &KIOFuseVFS::release,
 	.fsync = &KIOFuseVFS::fsync,
+        .opendir = &KIOFuseVFS::opendir,
 	.readdir = &KIOFuseVFS::readdir,
+        .releasedir = &KIOFuseVFS::releasedir,
+        .fsyncdir = &KIOFuseVFS::fsyncdir,
         .statfs = &KIOFuseVFS::statfs,
 };
 #pragma GCC diagnostic pop
@@ -1954,4 +1957,24 @@ int KIOFuseVFS::kioErrorToFuseError(const int kioError) {
 		case KIO::ERR_OWNER_DIED                   : return EIO;
 		default                                    : return EIO;
 	}
+}
+
+void KIOFuseVFS::opendir(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
+{
+    Q_UNUSED(req);
+    Q_UNUSED(ino);
+    Q_UNUSED(fi);
+}
+void KIOFuseVFS::releasedir(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi)
+{
+    Q_UNUSED(req);
+    Q_UNUSED(ino);
+    Q_UNUSED(fi);
+}
+void KIOFuseVFS::fsyncdir(fuse_req_t req, fuse_ino_t ino, int datasync, struct fuse_file_info *fi)
+{
+    Q_UNUSED(req);
+    Q_UNUSED(ino);
+    Q_UNUSED(datasync);
+    Q_UNUSED(fi);
 }
