@@ -45,12 +45,15 @@ KIOFuse::KIOFuse(QObject *parent, const QList<QVariant> &parameters)
     m_mountDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QStringLiteral("/Network/kiofuse");
     QDir().mkpath(m_mountDir);
     QProcess proc;
+    proc.start(QStringLiteral("fusermount"), {QStringLiteral("-zu"), m_mountDir});
+    proc.waitForFinished(10000);
     proc.start(QStringLiteral("kio-fuse"), {m_mountDir});
-    qDebug() << "kio.fuse.process:" << proc.waitForFinished(10000);
+    proc.waitForFinished(10000);
     m_controlFile.setFileName(m_mountDir + QStringLiteral("/_control"));
     m_controlFile.open(QIODevice::WriteOnly | QIODevice::Unbuffered | QIODevice::Truncate);
     const QString file = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/user-places.xbel");
     m_manager = KBookmarkManager::managerForExternalFile(file);
+
 }
 
 KIOFuse::~KIOFuse()
@@ -62,36 +65,48 @@ KIOFuse::~KIOFuse()
     QFile::remove(m_mountDir);
 }
 
-QString KIOFuse::convertToLocalPath(const QString &remotePath)
-{
-    QUrl u = QUrl::fromUserInput(remotePath);
-    u.setPassword({});
-    return m_mountDir + QStringLiteral("/%1/%2").arg(u.scheme()).arg(u.authority()) + u.path();
-}
-
 void KIOFuse::mountUrl(const QString &remoteUrl)
-{   
-    for (auto k : m_handledUrls.keys()) {
-        if (k.startsWith(remoteUrl) || remoteUrl.startsWith(k)) {
-            return;
-        }
-    }
-
-    if (!m_handledUrls.value(remoteUrl).isEmpty()) {
+{
+    QUrl u = QUrl::fromUserInput(remoteUrl);
+    QString cachedAuth = m_auth.value(u.host());
+    if (cachedAuth.isEmpty()) {
         return;
     }
-
-    QByteArray cmd = QStringLiteral("MOUNT %1").arg(remoteUrl).toUtf8();
+    u.setUserInfo(cachedAuth);
+    QByteArray cmd = QStringLiteral("MOUNT %1").arg(u.toString()).toUtf8();
     m_controlFile.write(cmd);
-    const QString localPath = convertToLocalPath(remoteUrl);
-    m_handledUrls.insert(remoteUrl, localPath);
-    createBookmark(QUrl::fromUserInput(remoteUrl).authority(), QUrl::fromLocalFile(localPath));
+    connect (this, &KIOFuse::mountInfoReceived, this, [=](const QString &ru, const QString &vp) {
+        QUrl _ru = QUrl::fromUserInput(ru).adjusted(QUrl::NormalizePathSegments);
+        const QString host = _ru.host();
+        if (!m_handledUrls.value(host).isEmpty()) {
+            return;
+        }
+        QString _vp = m_mountDir + vp;
+        createBookmark(host, QUrl::fromLocalFile(_vp));
+        _vp.remove(_ru.path());
+        m_handledUrls.insert(host, _vp);
+    });
+}
+
+void KIOFuse::setMountResponse(const QString &remoteUrl, const QString &virtualPath)
+{
+    if (virtualPath.isEmpty()) {
+        return;
+    }
+    emit mountInfoReceived(remoteUrl, virtualPath);
 }
 
 
 QString KIOFuse::localUrl(const QString &remoteUrl)
 {
-    return QUrl::fromLocalFile(convertToLocalPath(remoteUrl)).toString();
+    QUrl u = QUrl::fromUserInput(remoteUrl);
+    const QString virtualPath = m_handledUrls.value(u.host());
+    return virtualPath + u.path();
+}
+
+void KIOFuse::setAuthority(const QString &remoteURL, const QString &auth)
+{
+    m_auth.insert(remoteURL, auth);
 }
 
 void KIOFuse::createBookmark(const QString &label, const QUrl &url)

@@ -39,16 +39,21 @@ class KIOFuse : public KDEDModule
     public Q_SLOTS:
         Q_SCRIPTABLE void mountUrl(const QString &remoteUrl);
         Q_SCRIPTABLE QString localUrl(const QString &remoteUrl);
+        Q_SCRIPTABLE void setAuthority(const QString &remoteURL, const QString &auth);
+        Q_SCRIPTABLE void setMountResponse(const QString &remoteUrl, const QString &virtualPath);
 
     private:
-        QString convertToLocalPath(const QString &path);
         void createBookmark(const QString &label, const QUrl &url);
+
+    Q_SIGNALS:
+        void mountInfoReceived(const QString &remoteUrl, const QString &virtualPath);
 
     private:
         int m_idCount;
         QString m_mountDir;
         QFile m_controlFile;
         QMap<QString, QString> m_handledUrls;
+        QMap<QString, QString> m_auth;
         KBookmarkManager *m_manager;
 };
 

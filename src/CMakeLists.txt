@@ -10,9 +10,11 @@ ecm_qt_declare_logging_category(KIOFUSE_SOURCES
    CATEGORY_NAME org.kde.kio.fuse
    DEFAULT_SEVERITY Warning)
    
+qt5_add_dbus_interface( KIOFUSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/kded/org.kde.KIOFuse.xml kiofuse_interface )
+
 add_executable(kio-fuse ${KIOFUSE_SOURCES})
 target_include_directories(kio-fuse PRIVATE ${FUSE3_INCLUDE_DIRS})
 target_compile_definitions(kio-fuse PRIVATE FUSE_USE_VERSION=31 ${FUSE3_CFLAGS_OTHER})
-target_link_libraries(kio-fuse PRIVATE Qt5::Core KF5::KIOCore ${FUSE3_LIBRARIES})
+target_link_libraries(kio-fuse PRIVATE Qt5::Core KF5::KIOCore KF5::DBusAddons ${FUSE3_LIBRARIES})
 install(TARGETS kio-fuse DESTINATION ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
 add_subdirectory(kded)

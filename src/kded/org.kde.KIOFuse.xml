@@ -1,9 +1,20 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node>
-  <interface name="org.kde.FuseNotifier">
+  <interface name="org.kde.KIOFuse">
     <method name="mountUrl">
-        <arg name="remoteUrl" type="s" direction="in"/>
+      <arg name="remoteUrl" type="s" direction="in"/>
+    </method>
+    <method name="localUrl">
+      <arg type="s" direction="out"/>
+      <arg name="remoteUrl" type="s" direction="in"/>
+    </method>
+    <method name="setAuthority">
+      <arg name="remoteURL" type="s" direction="in"/>
+      <arg name="auth" type="s" direction="in"/>
+    </method>
+    <method name="setMountResponse">
+      <arg name="remoteUrl" type="s" direction="in"/>
+      <arg name="virtualPath" type="s" direction="in"/>
     </method>
   </interface>
 </node>
-

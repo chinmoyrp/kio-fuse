@@ -26,6 +26,7 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QDBusInterface>
 
 #include <KIO/ListJob>
 #include <KIO/MkdirJob>
@@ -35,6 +36,7 @@
 
 #include "debug.h"
 #include "kiofusevfs.h"
+#include "kiofuse_interface.h"
 
 // The libfuse macros make this necessary
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -761,7 +763,6 @@ void KIOFuseVFS::rename(fuse_req_t req, fuse_ino_t parent, const char *name, fus
 			return;
 		}
 	}
-        qDebug() << "debug.....";
 	auto url = that->remoteUrl(remoteParent),
 	     newUrl = that->remoteUrl(remoteNewParent);
 	url.setPath(url.path() + QLatin1Char('/') + QString::fromUtf8(name));
@@ -1139,7 +1140,7 @@ void KIOFuseVFS::reparentNode(const std::shared_ptr<KIOFuseNode> &node, fuse_ino
 		{
 			auto &childrenList = parentDir->m_childrenInos;
 			auto it = std::find(begin(childrenList), end(childrenList), node->m_stat.st_ino);
-			if(it != childrenList.end())
+                        if(it != childrenList.end())
 				childrenList.erase(it);
 			else
 				qWarning(KIOFUSE_LOG) << "Tried to reparent node with broken parent link";
@@ -1206,7 +1207,7 @@ QUrl KIOFuseVFS::remoteUrl(const std::shared_ptr<const KIOFuseNode> &node) const
 			// Origin found - add path and return
 			path.prepend({}); // Add a leading slash if necessary
 			QUrl url = remoteDirNode->m_overrideUrl;
-			url.setPath(url.path() + path.join(QLatin1Char('/')), QUrl::DecodedMode);
+                        url.setPath(url.path() + path.join(QLatin1Char('/')), QUrl::DecodedMode);
 			return url;
 		}
 
@@ -1699,7 +1700,9 @@ void KIOFuseVFS::handleControlCommand(QString cmd, std::function<void (int)> cal
 		if(url.isValid())
 			return mountUrl(url, [=](auto node, int error) {
 				Q_UNUSED(node);
-				callback(error ? EINVAL : 0);
+                                org::kde::KIOFuse kded(QStringLiteral("org.kde.kded5"), QStringLiteral("/modules/kiofuse"), QDBusConnection::sessionBus());
+                                kded.setMountResponse(remoteUrl(node).adjusted(QUrl::RemovePassword).toString(), virtualPath(node));
+                                callback(error ? EINVAL : 0);
 			});
 		else
 			return callback(EINVAL);
